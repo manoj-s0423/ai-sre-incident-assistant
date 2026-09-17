@@ -1,0 +1,6368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        AI SRE Incident Assistant
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        :root {
+
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --surface-muted: #f8fafc;
+            --border: #e5e7eb;
+
+            --text: #111827;
+            --text-muted: #64748b;
+
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+
+            --success: #15803d;
+            --warning: #d97706;
+            --danger: #dc2626;
+
+            --shadow:
+                0 2px 8px rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+
+        }
+
+
+        body {
+
+            margin: 0;
+            padding: 0;
+
+            background: var(--bg);
+            color: var(--text);
+
+            font-family:
+                Arial,
+                sans-serif;
+
+        }
+
+
+        /* =====================================================
+           HEADER
+           ===================================================== */
+
+        .header {
+
+            background: #111827;
+            color: white;
+
+            padding: 25px 40px;
+
+        }
+
+
+        .header h1 {
+
+            margin: 0;
+
+            font-size: 32px;
+
+        }
+
+
+        .header p {
+
+            margin: 8px 0 0;
+
+            color: #cbd5e1;
+
+            font-size: 16px;
+
+        }
+
+
+        /* =====================================================
+           CONTAINER
+           ===================================================== */
+
+        .container {
+
+            max-width: 1200px;
+
+            margin: 30px auto;
+
+            padding: 0 20px;
+
+        }
+
+
+        .section,
+        .incident-card,
+        .metric,
+        .analytics-card {
+
+            background:
+                var(--surface);
+
+            border-radius: 10px;
+
+            box-shadow:
+                var(--shadow);
+
+        }
+
+
+        .section,
+        .incident-card {
+
+            padding: 25px;
+
+            margin-top: 20px;
+
+        }
+
+
+        .incident-card {
+
+            margin-top: 0;
+
+        }
+
+
+        h2,
+        h3 {
+
+            color:
+                var(--text);
+
+        }
+
+
+        h2 {
+
+            margin-top: 0;
+
+        }
+
+
+        .section-header {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content:
+                space-between;
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .section-header h2 {
+
+            margin: 0;
+
+        }
+
+
+        .live-status {
+
+            padding:
+                6px 12px;
+
+            border-radius:
+                20px;
+
+            background:
+                #dcfce7;
+
+            color:
+                var(--success);
+
+            font-size:
+                12px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .live-status.unavailable {
+
+            background:
+                #fee2e2;
+
+            color:
+                var(--danger);
+
+        }
+
+
+        /* =====================================================
+           INCIDENT INFORMATION
+           ===================================================== */
+
+        .incident-info {
+
+            display: flex;
+
+            gap: 20px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+        .info {
+
+            min-width: 180px;
+
+            padding:
+                15px 20px;
+
+            background:
+                var(--surface-muted);
+
+            border-radius:
+                8px;
+
+        }
+
+
+        .info-title,
+        .metric-title {
+
+            color:
+                var(--text-muted);
+
+            font-size:
+                13px;
+
+        }
+
+
+        .info-value {
+
+            margin-top:
+                5px;
+
+            font-size:
+                18px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        /* =====================================================
+           BUTTONS
+           ===================================================== */
+
+        button {
+
+            padding:
+                14px 25px;
+
+            border: none;
+
+            border-radius:
+                8px;
+
+            background:
+                var(--primary);
+
+            color:
+                white;
+
+            cursor:
+                pointer;
+
+            font-size:
+                16px;
+
+        }
+
+
+        button:hover {
+
+            background:
+                var(--primary-dark);
+
+        }
+
+
+        button:disabled {
+
+            opacity:
+                0.6;
+
+            cursor:
+                not-allowed;
+
+        }
+
+
+        .loading {
+
+            display:
+                none;
+
+            margin-top:
+                20px;
+
+            color:
+                var(--text-muted);
+
+        }
+
+
+        /* =====================================================
+           STATISTICS
+           ===================================================== */
+
+        .metrics {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap:
+                20px;
+
+            margin-top:
+                20px;
+
+        }
+
+
+        .metrics.three {
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+        }
+
+
+        .metric {
+
+            padding:
+                25px;
+
+        }
+
+
+        .metric-value {
+
+            margin-top:
+                10px;
+
+            font-size:
+                30px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        /* =====================================================
+           RCA
+           ===================================================== */
+
+        .root-cause {
+
+            padding:
+                20px;
+
+            border-left:
+                5px solid #f97316;
+
+            border-radius:
+                8px;
+
+            background:
+                #fff7ed;
+
+            line-height:
+                1.6;
+
+        }
+
+
+        .evidence,
+        .action {
+
+            padding:
+                12px;
+
+            margin:
+                8px 0;
+
+            border-radius:
+                6px;
+
+            background:
+                var(--surface-muted);
+
+            line-height:
+                1.5;
+
+            overflow-wrap:
+                anywhere;
+
+        }
+
+
+        .confidence {
+
+            display:
+                inline-block;
+
+            padding:
+                8px 15px;
+
+            border-radius:
+                20px;
+
+            background:
+                #e2e8f0;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        /* =====================================================
+           AI INVESTIGATION TIMELINE
+           ===================================================== */
+
+        .investigation-status {
+
+            margin-bottom:
+                20px;
+
+            padding:
+                12px 15px;
+
+            border-radius:
+                8px;
+
+            background:
+                var(--surface-muted);
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .investigation-step {
+
+            position:
+                relative;
+
+            padding:
+                22px;
+
+            margin-bottom:
+                20px;
+
+            border:
+                1px solid var(--border);
+
+            border-left:
+                5px solid var(--primary);
+
+            border-radius:
+                8px;
+
+            background:
+                #ffffff;
+
+        }
+
+
+        .investigation-step:last-child {
+
+            margin-bottom:
+                0;
+
+        }
+
+
+        .investigation-step h3 {
+
+            margin-top:
+                0;
+
+            margin-bottom:
+                15px;
+
+        }
+
+
+        .investigation-meta {
+
+            display:
+                flex;
+
+            flex-wrap:
+                wrap;
+
+            gap:
+                8px;
+
+            margin-bottom:
+                18px;
+
+        }
+
+
+        .investigation-badge {
+
+            display:
+                inline-block;
+
+            padding:
+                6px 10px;
+
+            border-radius:
+                6px;
+
+            background:
+                #e2e8f0;
+
+            color:
+                #334155;
+
+            font-size:
+                12px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .investigation-badge.risk-low {
+
+            background:
+                #dcfce7;
+
+            color:
+                var(--success);
+
+        }
+
+
+        .investigation-badge.risk-medium {
+
+            background:
+                #fef3c7;
+
+            color:
+                var(--warning);
+
+        }
+
+
+        .investigation-badge.risk-high {
+
+            background:
+                #fee2e2;
+
+            color:
+                var(--danger);
+
+        }
+
+
+        .investigation-content {
+
+            line-height:
+                1.6;
+
+        }
+
+
+        .investigation-content strong {
+
+            color:
+                #334155;
+
+        }
+
+
+        .investigation-evidence {
+
+            margin-top:
+                18px;
+
+            padding:
+                16px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius:
+                8px;
+
+            background:
+                var(--surface-muted);
+
+        }
+
+
+        .investigation-evidence-title {
+
+            margin-bottom:
+                10px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .investigation-evidence pre {
+
+            margin:
+                0;
+
+            white-space:
+                pre-wrap;
+
+            word-wrap:
+                break-word;
+
+            overflow-x:
+                auto;
+
+            font-family:
+                monospace;
+
+            font-size:
+                13px;
+
+            line-height:
+                1.5;
+
+        }
+
+
+        .investigation-complete {
+
+            padding:
+                15px;
+
+            margin-top:
+                20px;
+
+            border-radius:
+                8px;
+
+            background:
+                #dcfce7;
+
+            color:
+                var(--success);
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .investigation-running {
+
+            padding:
+                15px;
+
+            margin-top:
+                20px;
+
+            border-radius:
+                8px;
+
+            background:
+                #fef3c7;
+
+            color:
+                var(--warning);
+
+            font-weight:
+                bold;
+
+        }
+
+
+        /* =====================================================
+           LIVE OBSERVABILITY
+           ===================================================== */
+
+        .observability-grid {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(6, 1fr);
+
+            gap:
+                15px;
+
+        }
+
+
+        .observability-card {
+
+            padding:
+                20px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius:
+                8px;
+
+            background:
+                var(--surface-muted);
+
+        }
+
+
+        .observability-label {
+
+            color:
+                var(--text-muted);
+
+            font-size:
+                13px;
+
+        }
+
+
+        .observability-value {
+
+            margin-top:
+                8px;
+
+            font-size:
+                24px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .health-section {
+
+            margin-top:
+                25px;
+
+        }
+
+
+        .health-section h3 {
+
+            margin-bottom:
+                12px;
+
+        }
+
+
+        .health-grid {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap:
+                20px;
+
+        }
+
+
+        .health-card {
+
+            padding:
+                18px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius:
+                8px;
+
+            background:
+                var(--surface-muted);
+
+        }
+
+
+        .health-row {
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            gap:
+                15px;
+
+            padding:
+                8px 0;
+
+            border-bottom:
+                1px solid var(--border);
+
+        }
+
+
+        .health-row:last-child {
+
+            border-bottom:
+                none;
+
+        }
+
+
+        .health-ok {
+
+            color:
+                var(--success);
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .health-warning {
+
+            color:
+                var(--warning);
+
+            font-weight:
+                bold;
+
+        }
+
+
+        /* =====================================================
+           ANALYTICS
+           ===================================================== */
+
+        .analytics-grid {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap:
+                20px;
+
+            margin-top:
+                20px;
+
+        }
+
+
+        .analytics-card {
+
+            padding:
+                25px;
+
+        }
+
+
+        .analytics-card h3 {
+
+            margin-top:
+                0;
+
+        }
+
+
+        .analytics-value {
+
+            margin-top:
+                15px;
+
+            font-size:
+                32px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .analytics-list {
+
+            margin-top:
+                15px;
+
+        }
+
+
+        .analytics-row {
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            gap:
+                15px;
+
+            padding:
+                10px 0;
+
+            border-bottom:
+                1px solid var(--border);
+
+        }
+
+
+        .analytics-label {
+
+            color:
+                #475569;
+
+        }
+
+
+        .analytics-count {
+
+            font-weight:
+                bold;
+
+        }
+
+
+        /* =====================================================
+           BARS
+           ===================================================== */
+
+        .bar-container {
+
+            margin:
+                12px 0;
+
+        }
+
+
+        .bar-label {
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            gap:
+                15px;
+
+            margin-bottom:
+                5px;
+
+        }
+
+
+        .bar-background {
+
+            width:
+                100%;
+
+            height:
+                12px;
+
+            overflow:
+                hidden;
+
+            border-radius:
+                6px;
+
+            background:
+                #e5e7eb;
+
+        }
+
+
+        .bar {
+
+            height:
+                100%;
+
+            border-radius:
+                6px;
+
+            background:
+                var(--primary);
+
+        }
+
+
+        /* =====================================================
+           CHARTS
+           ===================================================== */
+
+        .chart-container {
+
+            width:
+                100%;
+
+            min-height:
+                260px;
+
+            margin-top:
+                20px;
+
+        }
+
+
+        .chart-empty {
+
+            padding:
+                40px 10px;
+
+            text-align:
+                center;
+
+            color:
+                var(--text-muted);
+
+            background:
+                var(--surface-muted);
+
+            border-radius:
+                8px;
+
+        }
+
+
+        /* =====================================================
+           HISTORY
+           ===================================================== */
+
+        .table-container {
+
+            overflow-x:
+                auto;
+
+            margin-top:
+                15px;
+
+        }
+
+
+        table {
+
+            width:
+                100%;
+
+            min-width:
+                850px;
+
+            border-collapse:
+                collapse;
+
+            background:
+                white;
+
+        }
+
+
+        th,
+        td {
+
+            padding:
+                12px;
+
+            text-align:
+                left;
+
+            vertical-align:
+                top;
+
+            border-bottom:
+                1px solid var(--border);
+
+        }
+
+
+        th {
+
+            background:
+                var(--surface-muted);
+
+            color:
+                #475569;
+
+            font-size:
+                14px;
+
+        }
+
+
+        td {
+
+            color:
+                #334155;
+
+        }
+
+
+        .status-badge {
+
+            display:
+                inline-block;
+
+            padding:
+                5px 10px;
+
+            border-radius:
+                15px;
+
+            background:
+                #e2e8f0;
+
+            font-size:
+                12px;
+
+            font-weight:
+                bold;
+
+        }
+
+
+        .history-message {
+
+            margin-bottom:
+                10px;
+
+            color:
+                var(--text-muted);
+
+        }
+
+
+        /* =====================================================
+           REMEDIATION APPROVAL
+           ===================================================== */
+
+        .remediation-card {
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface-muted);
+        }
+
+        .remediation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .remediation-action {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .remediation-reason {
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .remediation-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .remediation-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .remediation-badge.risk-low {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        .remediation-badge.risk-medium {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .remediation-badge.risk-high {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .remediation-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .remediation-actions button {
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        .button-success {
+            background: var(--success);
+        }
+
+        .button-success:hover {
+            background: #166534;
+        }
+
+        .button-danger {
+            background: var(--danger);
+        }
+
+        .button-danger:hover {
+            background: #b91c1c;
+        }
+
+        .remediation-empty {
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--surface-muted);
+            color: var(--text-muted);
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+           ===================================================== */
+
+        @media (max-width: 1000px) {
+
+            .observability-grid {
+
+                grid-template-columns:
+                    repeat(3, 1fr);
+
+            }
+
+
+            .metrics {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+        }
+
+
+        @media (max-width: 800px) {
+
+            .analytics-grid,
+            .health-grid,
+            .metrics,
+            .metrics.three {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .observability-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+
+            .header {
+
+                padding:
+                    20px;
+
+            }
+
+
+            .header h1 {
+
+                font-size:
+                    26px;
+
+            }
+
+
+            .container {
+
+                padding:
+                    0 15px;
+
+            }
+
+        }
+
+
+        @media (max-width: 500px) {
+
+            .observability-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <header class="header">
+
+        <h1>
+            AI SRE Incident Assistant
+        </h1>
+
+        <p>
+            AI-powered incident investigation,
+            observability and root cause analysis
+        </p>
+
+    </header>
+
+
+    <main class="container">
+
+
+        <!-- =====================================================
+             INCIDENT INVESTIGATION
+             ===================================================== -->
+
+        <section class="incident-card">
+
+            <h2>
+                Incident Investigation
+            </h2>
+
+
+            <div class="incident-info">
+
+
+                <div class="info">
+
+                    <div class="info-title">
+                        Alert
+                    </div>
+
+                    <div
+                        id="incident-alert"
+                        class="info-value">
+
+                        HighHTTP5xxErrorRate
+
+                    </div>
+
+                </div>
+
+
+                <div class="info">
+
+                    <div class="info-title">
+                        Service
+                    </div>
+
+                    <div
+                        id="incident-service"
+                        class="info-value">
+
+                        order-service
+
+                    </div>
+
+                </div>
+
+
+                <div class="info">
+
+                    <div class="info-title">
+                        Severity
+                    </div>
+
+                    <div
+                        id="incident-severity"
+                        class="info-value">
+
+                        CRITICAL
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <br>
+
+
+            <button
+                id="investigateButton"
+                onclick="investigateIncident()">
+
+                Investigate Incident
+
+            </button>
+
+
+            <div
+                id="loading"
+                class="loading">
+
+                Collecting Kubernetes + Prometheus
+                evidence and asking Claude for RCA...
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             INCIDENT STATISTICS
+             ===================================================== -->
+
+        <div class="metrics">
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    Total Incidents
+                </div>
+
+                <div
+                    id="total-incidents"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    Active Incidents
+                </div>
+
+                <div
+                    id="active-incidents"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    Resolved Incidents
+                </div>
+
+                <div
+                    id="resolved-incidents"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    MTTR
+                </div>
+
+                <div
+                    id="mttr"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =====================================================
+             PROMETHEUS INCIDENT METRICS
+             ===================================================== -->
+
+        <div class="metrics three">
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    HTTP 5xx Error Rate
+                </div>
+
+                <div
+                    id="error-rate"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    Request Rate
+                </div>
+
+                <div
+                    id="request-rate"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+            <div class="metric">
+
+                <div class="metric-title">
+                    P95 Latency
+                </div>
+
+                <div
+                    id="latency"
+                    class="metric-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =====================================================
+             INCIDENT SUMMARY
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Incident Summary
+            </h2>
+
+            <p id="summary">
+                No investigation performed yet.
+            </p>
+
+        </section>
+
+
+        <!-- =====================================================
+             ROOT CAUSE
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Root Cause Assessment
+            </h2>
+
+            <div
+                id="root-cause"
+                class="root-cause">
+
+                No RCA available.
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             AFFECTED COMPONENT
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Affected Component
+            </h2>
+
+            <p id="affected-component">
+
+                No component information yet.
+
+            </p>
+
+        </section>
+
+
+        <!-- =====================================================
+             OBSERVATIONS
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Observations
+            </h2>
+
+            <div id="observations">
+
+                No observations yet.
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             EVIDENCE
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Evidence
+            </h2>
+
+            <div id="evidence">
+
+                No evidence yet.
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             IMPACT
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Impact
+            </h2>
+
+            <p id="impact">
+
+                No impact information yet.
+
+            </p>
+
+        </section>
+
+
+        <!-- =====================================================
+             RECOMMENDED ACTIONS
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Recommended Actions
+            </h2>
+
+            <div id="actions">
+
+                No recommendations yet.
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             REMEDIATION APPROVAL
+             ===================================================== -->
+
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>
+                    Remediation Approval
+                </h2>
+
+                <span
+                    id="remediation-status"
+                    class="live-status">
+
+                    Loading...
+
+                </span>
+
+            </div>
+
+            <p>
+                High-risk remediation actions require explicit
+                human approval before Kubernetes execution.
+            </p>
+
+            <div id="remediation-list">
+
+                <div class="remediation-empty">
+                    No remediation actions pending.
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             ADDITIONAL EVIDENCE
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                Additional Evidence Needed
+            </h2>
+
+            <div id="additional-evidence">
+
+                None.
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             AI CONFIDENCE
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                AI Confidence
+            </h2>
+
+            <span
+                id="confidence"
+                class="confidence">
+
+                -
+
+            </span>
+
+        </section>
+
+
+        <!-- =====================================================
+             AI INVESTIGATION TIMELINE
+             ===================================================== -->
+
+        <section class="section">
+
+
+            <div class="section-header">
+
+                <h2>
+                    AI Investigation Timeline
+                </h2>
+
+
+                <span
+                    id="investigation-status-badge"
+                    class="live-status">
+
+                    Waiting
+
+                </span>
+
+            </div>
+
+
+            <div
+                id="investigation-status"
+                class="investigation-status">
+
+                No automated incident investigation yet.
+
+            </div>
+
+
+            <div id="investigation-timeline">
+
+                <div class="evidence">
+
+                    Investigation steps will appear here
+                    after an automated investigation.
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             LIVE SERVICE OBSERVABILITY
+             ===================================================== -->
+
+        <section class="section">
+
+
+            <div class="section-header">
+
+                <h2>
+                    Live Service Observability
+                </h2>
+
+
+                <span
+                    id="observabilityStatus"
+                    class="live-status">
+
+                    Loading...
+
+                </span>
+
+            </div>
+
+
+            <div class="observability-grid">
+
+
+                <div class="observability-card">
+
+                    <div class="observability-label">
+                        CPU Usage
+                    </div>
+
+                    <div
+                        id="cpuUsage"
+                        class="observability-value">
+
+                        --
+
+                    </div>
+
+                </div>
+
+
+                <div class="observability-card">
+
+                    <div class="observability-label">
+                        Memory Usage
+                    </div>
+
+                    <div
+                        id="memoryUsage"
+                        class="observability-value">
+
+                        --
+
+                    </div>
+
+                </div>
+
+
+                <div class="observability-card">
+
+                    <div class="observability-label">
+                        P95 Latency
+                    </div>
+
+                    <div
+                        id="p95Latency"
+                        class="observability-value">
+
+                        --
+
+                    </div>
+
+                </div>
+
+
+                <div class="observability-card">
+
+                    <div class="observability-label">
+                        Error Rate
+                    </div>
+
+                    <div
+                        id="errorRate"
+                        class="observability-value">
+
+                        --
+
+                    </div>
+
+                </div>
+
+
+                <div class="observability-card">
+
+                    <div class="observability-label">
+                        Pod Restarts
+                    </div>
+
+                    <div
+                        id="podRestarts"
+                        class="observability-value">
+
+                        --
+
+                    </div>
+
+                </div>
+
+
+                <div class="observability-card">
+
+                    <div class="observability-label">
+                        Pod Status
+                    </div>
+
+                    <div
+                        id="podStatus"
+                        class="observability-value">
+
+                        --
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="health-section">
+
+
+                <h3>
+                    Kubernetes Health
+                </h3>
+
+
+                <div class="health-grid">
+
+
+                    <div class="health-card">
+
+                        <h3>
+                            Deployment
+                        </h3>
+
+                        <div id="deploymentHealth">
+
+                            Loading...
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="health-card">
+
+                        <h3>
+                            Pods
+                        </h3>
+
+                        <div id="podHealth">
+
+                            Loading...
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             SRE ANALYTICS
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2>
+                SRE Analytics
+            </h2>
+
+            <p>
+                Reliability and incident analytics based
+                on historical incidents.
+            </p>
+
+        </section>
+
+
+        <div class="analytics-grid">
+
+
+            <div class="analytics-card">
+
+                <h3>
+                    Incident Trends
+                </h3>
+
+                <div
+                    id="incidentTrendsChart"
+                    class="chart-container">
+
+                    Loading...
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card">
+
+                <h3>
+                    MTTR Trend
+                </h3>
+
+                <div
+                    id="mttrTrendsChart"
+                    class="chart-container">
+
+                    Loading...
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card">
+
+                <h3>
+                    Severity Distribution
+                </h3>
+
+                <div
+                    id="severity-distribution"
+                    class="analytics-list">
+
+                    Loading...
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card">
+
+                <h3>
+                    Incidents by Service
+                </h3>
+
+                <div
+                    id="service-distribution"
+                    class="analytics-list">
+
+                    Loading...
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card">
+
+                <h3>
+                    Resolution Rate
+                </h3>
+
+                <div
+                    id="resolution-rate"
+                    class="analytics-value">
+
+                    -
+
+                </div>
+
+            </div>
+
+
+            <div class="analytics-card">
+
+                <h3>
+                    Recurring Incidents
+                </h3>
+
+                <div
+                    id="recurring-incidents"
+                    class="analytics-list">
+
+                    Loading...
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =====================================================
+             INCIDENT HISTORY
+             ===================================================== -->
+
+        <section class="section">
+
+
+            <h2>
+                Incident History
+            </h2>
+
+
+            <div
+                id="history-message"
+                class="history-message">
+
+                Loading incidents...
+
+            </div>
+
+
+            <div class="table-container">
+
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                ID
+                            </th>
+
+                            <th>
+                                Service
+                            </th>
+
+                            <th>
+                                Alert
+                            </th>
+
+                            <th>
+                                Severity
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Root Cause
+                            </th>
+
+                            <th>
+                                Confidence
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="incident-history">
+
+                        <tr>
+
+                            <td colspan="7">
+
+                                Loading incidents...
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <script>
+
+
+        /* =====================================================
+           UTILITY HELPERS
+           ===================================================== */
+
+        function setText(
+            id,
+            value
+        ) {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (element) {
+
+                element.textContent =
+                    value;
+
+            }
+
+        }
+
+
+        function escapeHtml(
+            value
+        ) {
+
+            return String(
+                value ?? ""
+            )
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+
+        }
+
+
+        function formatMemory(
+            bytes
+        ) {
+
+            const value =
+                Number(bytes);
+
+
+            if (
+                !Number.isFinite(value)
+            ) {
+
+                return "--";
+
+            }
+
+
+            return `${(
+                value /
+                (
+                    1024 *
+                    1024
+                )
+            ).toFixed(1)} MiB`;
+
+        }
+
+
+        function formatDurationMinutes(
+            minutes
+        ) {
+
+            const value =
+                Number(minutes);
+
+
+            if (
+                !Number.isFinite(value)
+            ) {
+
+                return "--";
+
+            }
+
+
+            if (
+                value >= 60
+            ) {
+
+                return `${(
+                    value / 60
+                ).toFixed(1)}h`;
+
+            }
+
+
+            return `${value.toFixed(1)}m`;
+
+        }
+
+
+        /* =====================================================
+           MANUAL INVESTIGATION
+           ===================================================== */
+
+        async function investigateIncident() {
+
+            const loading =
+                document.getElementById(
+                    "loading"
+                );
+
+
+            const button =
+                document.getElementById(
+                    "investigateButton"
+                );
+
+
+            loading.style.display =
+                "block";
+
+
+            button.disabled =
+                true;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/investigate",
+                        {
+                            method:
+                                "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    alert_name:
+                                        "HighHTTP5xxErrorRate",
+
+                                    service:
+                                        "order-service",
+
+                                    severity:
+                                        "critical"
+
+                                })
+
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    data.status !==
+                    "success"
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Investigation failed"
+                    );
+
+                }
+
+
+                updateDashboard(
+                    data
+                );
+
+
+                await Promise.all([
+
+                    loadIncidentStats(),
+
+                    loadIncidentHistory(),
+
+                    loadAnalytics(),
+
+                    loadObservabilityOverview(),
+
+                    loadLatestPrometheusMetrics()
+
+                ]);
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Investigation failed:",
+                    error
+                );
+
+
+                alert(
+                    `Investigation failed: ${error.message}`
+                );
+
+            }
+
+
+            finally {
+
+                loading.style.display =
+                    "none";
+
+
+                button.disabled =
+                    false;
+
+            }
+
+        }
+
+
+        /* =====================================================
+           UPDATE RCA DASHBOARD
+           ===================================================== */
+
+        function updateDashboard(
+            data
+        ) {
+
+            const context =
+                Array.isArray(
+                    data.incident_context
+                )
+                    ? data.incident_context[0]
+                    : (
+                        data.incident_context ||
+                        {}
+                    );
+
+
+            const evidence =
+                context.evidence ||
+                {};
+
+
+            const prometheus =
+                evidence.prometheus ||
+                {};
+
+
+            const rca =
+                data.root_cause_analysis ||
+                data.investigation_result ||
+                {};
+
+
+            /*
+             * Prometheus incident metrics.
+             */
+
+            if (
+                Object.keys(
+                    prometheus
+                ).length > 0
+            ) {
+
+                setText(
+                    "error-rate",
+
+                    `${Number(
+                        prometheus
+                            .http_5xx_error_rate_percent
+                        || 0
+                    ).toFixed(2)}%`
+                );
+
+
+                setText(
+                    "request-rate",
+
+                    `${Number(
+                        prometheus
+                            .http_request_rate_per_second
+                        || 0
+                    ).toFixed(3)} req/s`
+                );
+
+
+                setText(
+                    "latency",
+
+                    `${(
+                        Number(
+                            prometheus
+                                .http_latency_p95_seconds
+                            || 0
+                        ) * 1000
+                    ).toFixed(2)} ms`
+                );
+
+            }
+
+
+            /*
+             * RCA information.
+             */
+
+            setText(
+                "summary",
+
+                rca.incident_summary ||
+                rca.conclusion ||
+                "No investigation summary available."
+            );
+
+
+            setText(
+                "root-cause",
+
+                rca.root_cause ||
+
+                (
+                    rca.root_cause_identified
+                        ? "Root cause identified."
+                        : "No root cause identified."
+                )
+
+            );
+
+
+            setText(
+                "affected-component",
+
+                rca.affected_component ||
+                "No affected component identified."
+            );
+
+
+            setText(
+                "impact",
+
+                rca.impact ||
+                "No impact information available."
+            );
+
+
+            setText(
+                "confidence",
+
+                rca.confidence ||
+                "-"
+            );
+
+
+            renderList(
+
+                "observations",
+
+                rca.observations,
+
+                "No observations available.",
+
+                "evidence",
+
+                "• "
+
+            );
+
+
+            renderList(
+
+                "evidence",
+
+                rca.evidence,
+
+                "No evidence available.",
+
+                "evidence",
+
+                "✓ "
+
+            );
+
+
+            renderList(
+
+                "actions",
+
+                rca.recommended_actions,
+
+                "No recommendations available.",
+
+                "action",
+
+                null,
+
+                true
+
+            );
+
+
+            renderList(
+
+                "additional-evidence",
+
+                rca.additional_evidence_needed,
+
+                "No additional evidence required.",
+
+                "evidence",
+
+                "• "
+
+            );
+
+        }
+
+
+        /* =====================================================
+           RENDER LIST
+           ===================================================== */
+
+        function renderList(
+            elementId,
+            items,
+            emptyMessage,
+            className,
+            prefix,
+            numbered = false
+        ) {
+
+            const container =
+                document.getElementById(
+                    elementId
+                );
+
+
+            if (!container) {
+
+                return;
+
+            }
+
+
+            container.innerHTML =
+                "";
+
+
+            const values =
+                Array.isArray(items)
+                    ? items
+                    : [];
+
+
+            if (
+                values.length === 0
+            ) {
+
+                container.textContent =
+                    emptyMessage;
+
+                return;
+
+            }
+
+
+            values.forEach(
+                function(
+                    item,
+                    index
+                ) {
+
+                    const div =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    div.className =
+                        className;
+
+
+                    if (numbered) {
+
+                        div.textContent =
+                            `${index + 1}. ${item}`;
+
+                    }
+
+                    else {
+
+                        div.textContent =
+                            `${prefix || ""}${item}`;
+
+                    }
+
+
+                    container.appendChild(
+                        div
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           LATEST AUTOMATED INCIDENT
+           ===================================================== */
+
+        async function loadLatestIncident() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/latest-incident"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                /*
+                 * No automated investigation.
+                 */
+
+                if (
+                    data.status ===
+                    "idle"
+                ) {
+
+                    setText(
+                        "investigation-status",
+
+                        data.message ||
+                        "No automated incident investigation yet."
+
+                    );
+
+
+                    setText(
+                        "investigation-status-badge",
+                        "Waiting"
+                    );
+
+
+                    return;
+
+                }
+
+
+                /*
+                 * Update incident information
+                 * when available.
+                 */
+
+                if (
+                    data.incident
+                ) {
+
+                    setText(
+                        "incident-alert",
+
+                        data.incident.alert_name ||
+                        "HighHTTP5xxErrorRate"
+
+                    );
+
+
+                    setText(
+                        "incident-service",
+
+                        data.incident.service ||
+                        "order-service"
+
+                    );
+
+
+                    setText(
+                        "incident-severity",
+
+                        String(
+                            data.incident.severity ||
+                            "critical"
+                        ).toUpperCase()
+
+                    );
+
+                }
+
+
+                /*
+                 * Render the interactive
+                 * investigation timeline.
+                 */
+
+                if (data.investigation) {
+
+                    renderInvestigationTimeline(
+                        data
+                    );
+
+                }
+
+
+                /*
+                 * Populate RCA cards directly
+                 * from the investigation.
+                 *
+                 * This is important because the
+                 * restored /api/latest-incident
+                 * response may contain investigation
+                 * but not investigation_result.
+                 */
+
+                if (data.investigation) {
+
+                    populateRcaFromInvestigation(
+                        data
+                    );
+
+                }
+
+
+                /*
+                 * Newer backend response.
+                 */
+
+                if (data.investigation_result) {
+
+                    updateDashboard({
+
+                        incident_context:
+                            data.incident_context,
+
+                        investigation_result:
+                            data.investigation_result
+
+                    });
+
+                }
+
+
+                /*
+                 * Backward compatibility with
+                 * the older manual RCA response.
+                 */
+
+                if (data.root_cause_analysis) {
+
+                    updateDashboard(
+                        data
+                    );
+
+                }
+
+
+                /*
+                 * Load current Prometheus values.
+                 */
+
+                loadLatestPrometheusMetrics();
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load latest incident:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           POPULATE RCA FROM INTERACTIVE INVESTIGATION
+           ===================================================== */
+
+        function populateRcaFromInvestigation(
+            data
+        ) {
+
+            const investigation =
+                data.investigation ||
+                {};
+
+
+            const steps =
+                Array.isArray(
+                    investigation.steps
+                )
+                    ? investigation.steps
+                    : [];
+
+
+            const context =
+                Array.isArray(
+                    data.incident_context
+                )
+                    ? data.incident_context[0]
+                    : (
+                        data.incident_context ||
+                        {}
+                    );
+
+
+            const incident =
+                context.incident ||
+                {};
+
+
+            const alert =
+                incident.alert ||
+                {};
+
+
+            const evidence =
+                context.evidence ||
+                {};
+
+
+            const prometheus =
+                evidence.prometheus ||
+                {};
+
+
+            /*
+             * Find the final AI decision.
+             */
+
+            const finalStep =
+                steps.length > 0
+                    ? steps[
+                        steps.length - 1
+                    ]
+                    : {};
+
+
+            const decision =
+                finalStep.decision ||
+                {};
+
+
+            const status =
+                investigation.status ||
+                decision.status ||
+                "unknown";
+
+
+            let summary =
+                "";
+
+
+            let rootCause =
+                "";
+
+
+            let affectedComponent =
+                "";
+
+
+            let impact =
+                "";
+
+
+            let confidence =
+                "Low";
+
+
+            let actions =
+                [];
+
+
+            let additionalEvidence =
+                [];
+
+
+            /*
+             * Root cause identified.
+             */
+
+            if (
+                status ===
+                "root_cause_identified"
+            ) {
+
+                summary =
+                    decision.reason ||
+                    "AI investigation identified a root cause.";
+
+
+                rootCause =
+                    decision.reason ||
+                    "Root cause identified.";
+
+
+                affectedComponent =
+                    alert.service ||
+                    "order-service";
+
+
+                impact =
+                    "High HTTP 5xx error rate affecting requests handled by the service.";
+
+
+                confidence =
+                    "Medium";
+
+
+                actions = [
+
+                    "Review the application routing and /error endpoint implementation.",
+
+                    "Identify why production traffic is being sent to the /error endpoint.",
+
+                    "Patch or remove the faulty application route if it is not intentionally required."
+
+                ];
+
+            }
+
+
+            /*
+             * Resolved without confirmed root cause.
+             */
+
+            else if (
+                status ===
+                "resolved"
+            ) {
+
+                summary =
+                    decision.reason ||
+                    "The incident has been resolved.";
+
+
+                rootCause =
+                    "No root cause was conclusively identified.";
+
+
+                affectedComponent =
+                    alert.service ||
+                    "order-service";
+
+
+                impact =
+                    "The alert condition is no longer active.";
+
+
+                confidence =
+                    "Low";
+
+            }
+
+
+            /*
+             * Insufficient evidence.
+             */
+
+            else if (
+                status ===
+                "insufficient_evidence"
+            ) {
+
+                summary =
+                    decision.reason ||
+                    "Investigation stopped because available evidence was insufficient.";
+
+
+                rootCause =
+                    "Insufficient evidence to determine root cause.";
+
+
+                affectedComponent =
+                    alert.service ||
+                    "order-service";
+
+
+                impact =
+                    "The incident could not be fully assessed from the available evidence.";
+
+
+                confidence =
+                    "Low";
+
+
+                additionalEvidence = [
+
+                    "Additional application-level evidence is required to determine the exact source of the failing requests."
+
+                ];
+
+            }
+
+
+            /*
+             * Investigation limit reached.
+             */
+
+            else if (
+                status ===
+                "investigation_limit_reached"
+            ) {
+
+                summary =
+                    decision.reason ||
+                    "Investigation stopped after reaching the safety investigation limit.";
+
+
+                rootCause =
+                    "Root cause was not conclusively identified within the investigation limit.";
+
+
+                affectedComponent =
+                    alert.service ||
+                    "order-service";
+
+
+                impact =
+                    "Further investigation is required.";
+
+
+                confidence =
+                    "Low";
+
+
+                additionalEvidence = [
+
+                    "Additional investigation steps may be required."
+
+                ];
+
+            }
+
+
+            /*
+             * Update incident metrics if the
+             * original Prometheus evidence exists.
+             */
+
+            if (
+                Object.keys(
+                    prometheus
+                ).length > 0
+            ) {
+
+                setText(
+                    "error-rate",
+
+                    `${Number(
+                        prometheus
+                            .http_5xx_error_rate_percent
+                        || 0
+                    ).toFixed(2)}%`
+                );
+
+
+                setText(
+                    "request-rate",
+
+                    `${Number(
+                        prometheus
+                            .http_request_rate_per_second
+                        || 0
+                    ).toFixed(3)} req/s`
+                );
+
+
+                setText(
+                    "latency",
+
+                    `${(
+                        Number(
+                            prometheus
+                                .http_latency_p95_seconds
+                            || 0
+                        ) * 1000
+                    ).toFixed(2)} ms`
+                );
+
+            }
+
+
+            /*
+             * Incident Summary.
+             */
+
+            setText(
+                "summary",
+
+                summary ||
+                "No investigation summary available."
+            );
+
+
+            /*
+             * Root Cause.
+             */
+
+            setText(
+                "root-cause",
+
+                rootCause ||
+                "No root cause identified."
+            );
+
+
+            /*
+             * Affected component.
+             */
+
+            setText(
+                "affected-component",
+
+                affectedComponent ||
+                "No affected component identified."
+            );
+
+
+            /*
+             * Impact.
+             */
+
+            setText(
+                "impact",
+
+                impact ||
+                "No impact information available."
+            );
+
+
+            /*
+             * Confidence.
+             */
+
+            setText(
+                "confidence",
+
+                confidence
+            );
+
+
+            /*
+             * Build evidence list from
+             * every investigation step.
+             */
+
+            const evidenceItems =
+                steps
+                    .filter(
+                        function(entry) {
+
+                            return (
+                                entry.evidence !==
+                                undefined &&
+                                entry.evidence !==
+                                null
+                            );
+
+                        }
+                    )
+                    .map(
+                        function(entry) {
+
+                            return (
+                                `Step ${entry.step}: ` +
+                                formatInvestigationEvidence(
+                                    entry.evidence
+                                )
+                            );
+
+                        }
+                    );
+
+
+            renderList(
+
+                "evidence",
+
+                evidenceItems,
+
+                "No evidence available.",
+
+                "evidence",
+
+                "✓ "
+
+            );
+
+
+            /*
+             * Build observations from
+             * AI investigation reasoning.
+             */
+
+            const observations =
+                steps
+                    .filter(
+                        function(entry) {
+
+                            return (
+                                entry.decision &&
+                                entry.decision.reason
+                            );
+
+                        }
+                    )
+                    .map(
+                        function(entry) {
+
+                            return (
+                                `Step ${entry.step}: ` +
+                                entry.decision.reason
+                            );
+
+                        }
+                    );
+
+
+            renderList(
+
+                "observations",
+
+                observations,
+
+                "No observations available.",
+
+                "evidence",
+
+                "• "
+
+            );
+
+
+            /*
+             * Recommended actions.
+             */
+
+            renderList(
+
+                "actions",
+
+                actions,
+
+                "No recommendations available.",
+
+                "action",
+
+                null,
+
+                true
+
+            );
+
+
+            /*
+             * Additional evidence.
+             */
+
+            renderList(
+
+                "additional-evidence",
+
+                additionalEvidence,
+
+                "No additional evidence required.",
+
+                "evidence",
+
+                "• "
+
+            );
+
+        }
+
+
+        /* =====================================================
+           RENDER AI INVESTIGATION TIMELINE
+           ===================================================== */
+
+        function renderInvestigationTimeline(
+            data
+        ) {
+
+            const timeline =
+                document.getElementById(
+                    "investigation-timeline"
+                );
+
+
+            const statusElement =
+                document.getElementById(
+                    "investigation-status"
+                );
+
+
+            const statusBadge =
+                document.getElementById(
+                    "investigation-status-badge"
+                );
+
+
+            if (!timeline) {
+
+                return;
+
+            }
+
+
+            const investigation =
+                data.investigation ||
+                {};
+
+
+            const steps =
+                Array.isArray(
+                    investigation.steps
+                )
+                    ? investigation.steps
+                    : [];
+
+
+            /*
+             * Investigation status.
+             */
+
+            const investigationStatus =
+                investigation.status ||
+                "unknown";
+
+
+            statusElement.textContent =
+                `Investigation status: ${investigationStatus}`;
+
+
+            statusBadge.textContent =
+                investigationStatus;
+
+
+            statusBadge.classList.remove(
+                "unavailable"
+            );
+
+
+            if (
+                investigationStatus ===
+                "root_cause_identified"
+            ) {
+
+                statusBadge.style.background =
+                    "#dcfce7";
+
+                statusBadge.style.color =
+                    "var(--success)";
+
+            }
+
+
+            else if (
+                investigationStatus ===
+                "insufficient_evidence"
+            ) {
+
+                statusBadge.style.background =
+                    "#fef3c7";
+
+                statusBadge.style.color =
+                    "var(--warning)";
+
+            }
+
+
+            else if (
+                investigationStatus ===
+                "resolved"
+            ) {
+
+                statusBadge.style.background =
+                    "#e2e8f0";
+
+                statusBadge.style.color =
+                    "#334155";
+
+            }
+
+
+            else {
+
+                statusBadge.style.background =
+                    "#e2e8f0";
+
+                statusBadge.style.color =
+                    "#334155";
+
+            }
+
+
+            /*
+             * Empty investigation.
+             */
+
+            if (
+                steps.length === 0
+            ) {
+
+                timeline.innerHTML = `
+
+                    <div class="evidence">
+
+                        No investigation steps
+                        were recorded.
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+            /*
+             * Clear existing timeline.
+             */
+
+            timeline.innerHTML =
+                "";
+
+
+            /*
+             * Render every investigation step.
+             */
+
+            steps.forEach(
+                function(entry) {
+
+                    const stepNumber =
+                        entry.step ||
+                        "-";
+
+
+                    const decision =
+                        entry.decision ||
+                        {};
+
+
+                    const evidence =
+                        entry.evidence;
+
+
+                    const stepElement =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    stepElement.className =
+                        "investigation-step";
+
+
+                    /*
+                     * Risk class.
+                     */
+
+                    let riskClass =
+                        "";
+
+
+                    if (
+                        decision.risk ===
+                        "Low"
+                    ) {
+
+                        riskClass =
+                            "risk-low";
+
+                    }
+
+
+                    else if (
+                        decision.risk ===
+                        "Medium"
+                    ) {
+
+                        riskClass =
+                            "risk-medium";
+
+                    }
+
+
+                    else if (
+                        decision.risk ===
+                        "High"
+                    ) {
+
+                        riskClass =
+                            "risk-high";
+
+                    }
+
+
+                    /*
+                     * Evidence HTML.
+                     */
+
+                    let evidenceHTML =
+                        "";
+
+
+                    if (
+                        evidence !==
+                        undefined &&
+                        evidence !==
+                        null
+                    ) {
+
+                        evidenceHTML = `
+
+                            <div class="
+                                investigation-evidence
+                            ">
+
+                                <div class="
+                                    investigation-evidence-title
+                                ">
+
+                                    Evidence Returned
+
+                                </div>
+
+
+                                <pre>${escapeHtml(
+                                    formatInvestigationEvidence(
+                                        evidence
+                                    )
+                                )}</pre>
+
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    /*
+                     * Step HTML.
+                     */
+
+                    stepElement.innerHTML = `
+
+                        <h3>
+
+                            Investigation Step
+                            ${escapeHtml(
+                                stepNumber
+                            )}
+
+                        </h3>
+
+
+                        <div class="
+                            investigation-meta
+                        ">
+
+
+                            <span class="
+                                investigation-badge
+                            ">
+
+                                Status:
+                                ${escapeHtml(
+                                    decision.status ||
+                                    "-"
+                                )}
+
+                            </span>
+
+
+                            <span class="
+                                investigation-badge
+                            ">
+
+                                Tool:
+                                ${escapeHtml(
+                                    decision.tool ||
+                                    "-"
+                                )}
+
+                            </span>
+
+
+                            <span class="
+                                investigation-badge
+                            ">
+
+                                Target:
+                                ${escapeHtml(
+                                    decision.target ||
+                                    "-"
+                                )}
+
+                            </span>
+
+
+                            <span class="
+                                investigation-badge
+                                ${riskClass}
+                            ">
+
+                                Risk:
+                                ${escapeHtml(
+                                    decision.risk ||
+                                    "-"
+                                )}
+
+                            </span>
+
+
+                            <span class="
+                                investigation-badge
+                            ">
+
+                                Approval:
+                                ${
+                                    decision.requires_approval
+                                        ? "Required"
+                                        : "Not Required"
+                                }
+
+                            </span>
+
+
+                        </div>
+
+
+                        <div class="
+                            investigation-content
+                        ">
+
+
+                            <strong>
+                                AI Action
+                            </strong>
+
+
+                            <br>
+
+
+                            ${escapeHtml(
+                                decision.action ||
+                                "-"
+                            )}
+
+
+                            <br><br>
+
+
+                            <strong>
+                                Reason
+                            </strong>
+
+
+                            <br>
+
+
+                            ${escapeHtml(
+                                decision.reason ||
+                                "-"
+                            )}
+
+
+                            <br><br>
+
+
+                            <strong>
+                                Expected Result
+                            </strong>
+
+
+                            <br>
+
+
+                            ${escapeHtml(
+                                decision.expected_result ||
+                                "-"
+                            )}
+
+
+                        </div>
+
+
+                        ${evidenceHTML}
+
+                    `;
+
+
+                    timeline.appendChild(
+                        stepElement
+                    );
+
+                }
+            );
+
+
+            /*
+             * Investigation completed.
+             */
+
+            if (
+                [
+                    "resolved",
+                    "root_cause_identified"
+                ].includes(
+                    investigationStatus
+                )
+            ) {
+
+                const complete =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                complete.className =
+                    "investigation-complete";
+
+
+                complete.textContent =
+                    `AI investigation completed: ${investigationStatus}`;
+
+
+                timeline.appendChild(
+                    complete
+                );
+
+            }
+
+
+            /*
+             * Investigation stopped because
+             * evidence was insufficient.
+             */
+
+            if (
+                investigationStatus ===
+                "insufficient_evidence"
+            ) {
+
+                const warning =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                warning.className =
+                    "investigation-running";
+
+
+                warning.textContent =
+                    "Investigation stopped because the available evidence was insufficient to determine a reliable root cause.";
+
+
+                timeline.appendChild(
+                    warning
+                );
+
+            }
+
+
+            /*
+             * Investigation safety limit.
+             */
+
+            if (
+                investigationStatus ===
+                "investigation_limit_reached"
+            ) {
+
+                const warning =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                warning.className =
+                    "investigation-running";
+
+
+                warning.textContent =
+                    "Investigation stopped after reaching the configured safety limit of investigation steps.";
+
+
+                timeline.appendChild(
+                    warning
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           FORMAT INVESTIGATION EVIDENCE
+           ===================================================== */
+
+        function formatInvestigationEvidence(
+            evidence
+        ) {
+
+            try {
+
+                return JSON.stringify(
+                    evidence,
+                    null,
+                    2
+                );
+
+            }
+
+
+            catch (error) {
+
+                return String(
+                    evidence
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           CURRENT PROMETHEUS / OBSERVABILITY VALUES
+           ===================================================== */
+
+        async function loadLatestPrometheusMetrics() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/observability-overview"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const observability =
+                    data.service_observability ||
+                    {};
+
+
+                /*
+                 * Error rate.
+                 */
+
+                if (
+                    observability
+                        .error_rate_percent !==
+                    undefined
+                ) {
+
+                    setText(
+                        "error-rate",
+
+                        `${Number(
+                            observability
+                                .error_rate_percent ||
+                            0
+                        ).toFixed(2)}%`
+                    );
+
+                }
+
+
+                /*
+                 * P95 latency.
+                 */
+
+                if (
+                    observability
+                        .p95_latency_seconds !==
+                    undefined
+                ) {
+
+                    setText(
+                        "latency",
+
+                        `${(
+                            Number(
+                                observability
+                                    .p95_latency_seconds ||
+                                0
+                            ) * 1000
+                        ).toFixed(2)} ms`
+
+                    );
+
+                }
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load current Prometheus metrics:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           INCIDENT HISTORY
+           ===================================================== */
+
+        async function loadIncidentHistory() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/incidents"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const table =
+                    document.getElementById(
+                        "incident-history"
+                    );
+
+
+                const message =
+                    document.getElementById(
+                        "history-message"
+                    );
+
+
+                table.innerHTML =
+                    "";
+
+
+                const incidents =
+                    Array.isArray(
+                        data.incidents
+                    )
+                        ? data.incidents
+                        : [];
+
+
+                if (
+                    incidents.length === 0
+                ) {
+
+                    table.innerHTML = `
+
+                        <tr>
+
+                            <td colspan="7">
+
+                                No incidents recorded
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+
+                    message.textContent =
+                        "No incidents found.";
+
+
+                    return;
+
+                }
+
+
+                message.textContent =
+                    `${incidents.length} incident(s) found`;
+
+
+                incidents.forEach(
+                    function(incident) {
+
+                        const row =
+                            document.createElement(
+                                "tr"
+                            );
+
+
+                        row.innerHTML = `
+
+                            <td>
+
+                                ${escapeHtml(
+                                    incident.id
+                                )}
+
+                            </td>
+
+
+                            <td>
+
+                                ${escapeHtml(
+                                    incident.service
+                                )}
+
+                            </td>
+
+
+                            <td>
+
+                                ${escapeHtml(
+                                    incident.alert_name
+                                )}
+
+                            </td>
+
+
+                            <td>
+
+                                ${escapeHtml(
+                                    incident.severity
+                                )}
+
+                            </td>
+
+
+                            <td>
+
+                                <span
+                                    class="status-badge">
+
+                                    ${escapeHtml(
+                                        incident.status
+                                    )}
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                ${escapeHtml(
+                                    incident.root_cause ||
+                                    "Pending RCA"
+                                )}
+
+                            </td>
+
+
+                            <td>
+
+                                ${escapeHtml(
+                                    incident.confidence ||
+                                    "-"
+                                )}
+
+                            </td>
+
+                        `;
+
+
+                        table.appendChild(
+                            row
+                        );
+
+                    }
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load incident history:",
+                    error
+                );
+
+
+                document.getElementById(
+                    "history-message"
+                ).textContent =
+                    "Failed to load incident history.";
+
+            }
+
+        }
+
+
+        /* =====================================================
+           INCIDENT STATISTICS
+           ===================================================== */
+
+        async function loadIncidentStats() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/incident-stats"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const stats =
+                    data.statistics ||
+                    {};
+
+
+                setText(
+                    "total-incidents",
+                    stats.total ?? "-"
+                );
+
+
+                setText(
+                    "active-incidents",
+                    stats.active ?? "-"
+                );
+
+
+                setText(
+                    "resolved-incidents",
+                    stats.resolved ?? "-"
+                );
+
+
+                setText(
+                    "mttr",
+
+                    formatDurationMinutes(
+
+                        Number(
+                            stats.mttr_seconds ||
+                            0
+                        ) / 60
+
+                    )
+
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load incident statistics:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           LIVE OBSERVABILITY
+           ===================================================== */
+
+        async function loadObservabilityOverview() {
+
+            const status =
+                document.getElementById(
+                    "observabilityStatus"
+                );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/observability-overview"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const observability =
+                    data.service_observability ||
+                    {};
+                    if (
+                        observability.request_rate_per_second !==
+                        undefined
+                    ) {
+
+                        setText(
+                            "request-rate",
+
+                            `${Number(
+                                observability.request_rate_per_second ||
+                                0
+                            ).toFixed(3)} req/s`
+                        );
+
+                    }
+
+
+                const kubernetes =
+                    data.kubernetes_health ||
+                    {};
+
+
+                const cpuCores =
+                    Number(
+                        observability.cpu_cores ||
+                        0
+                    );
+
+
+                setText(
+                    "cpuUsage",
+
+                    `${(
+                        cpuCores * 1000
+                    ).toFixed(1)} m`
+
+                );
+
+
+                setText(
+                    "memoryUsage",
+
+                    formatMemory(
+                        observability.memory_bytes
+                    )
+
+                );
+
+
+                setText(
+                    "p95Latency",
+
+                    `${(
+                        Number(
+                            observability
+                                .p95_latency_seconds ||
+                            0
+                        ) * 1000
+                    ).toFixed(2)} ms`
+
+                );
+
+
+                setText(
+                    "errorRate",
+
+                    `${Number(
+                        observability
+                            .error_rate_percent ||
+                        0
+                    ).toFixed(2)}%`
+
+                );
+
+
+                setText(
+                    "podRestarts",
+
+                    observability.pod_restarts ??
+                    "--"
+
+                );
+
+
+                const pods =
+                    kubernetes
+                        .pods?.pods ||
+                    [];
+
+
+                const allPodsHealthy =
+                    pods.length > 0 &&
+                    pods.every(
+                        function(pod) {
+
+                            return (
+                                pod.phase ===
+                                "Running" &&
+
+                                pod.ready_containers ===
+                                pod.total_containers
+                            );
+
+                        }
+                    );
+
+
+                setText(
+                    "podStatus",
+
+                    allPodsHealthy
+                        ? "Healthy"
+                        : "Attention"
+
+                );
+
+
+                status.textContent =
+                    "Live";
+
+
+                status.classList.remove(
+                    "unavailable"
+                );
+
+
+                renderDeploymentHealth(
+                    kubernetes.deployment
+                );
+
+
+                renderPodHealth(
+                    pods
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load observability:",
+                    error
+                );
+
+
+                status.textContent =
+                    "Unavailable";
+
+
+                status.classList.add(
+                    "unavailable"
+                );
+
+
+                setText(
+                    "deploymentHealth",
+                    "Unable to retrieve deployment health."
+                );
+
+
+                setText(
+                    "podHealth",
+                    "Unable to retrieve pod health."
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           DEPLOYMENT HEALTH
+           ===================================================== */
+
+        function renderDeploymentHealth(
+            deployment
+        ) {
+
+            const container =
+                document.getElementById(
+                    "deploymentHealth"
+                );
+
+
+            if (
+                !deployment ||
+                deployment.error
+            ) {
+
+                container.textContent =
+                    "Deployment health unavailable.";
+
+                return;
+
+            }
+
+
+            const healthy =
+                deployment.desired_replicas ===
+                deployment.available_replicas &&
+
+                deployment.desired_replicas ===
+                deployment.ready_replicas &&
+
+                deployment.unavailable_replicas ===
+                0;
+
+
+            container.innerHTML = `
+
+                <div class="health-row">
+
+                    <span>
+                        Desired
+                    </span>
+
+                    <strong>
+
+                        ${escapeHtml(
+                            deployment.desired_replicas
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div class="health-row">
+
+                    <span>
+                        Available
+                    </span>
+
+                    <strong>
+
+                        ${escapeHtml(
+                            deployment.available_replicas
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div class="health-row">
+
+                    <span>
+                        Ready
+                    </span>
+
+                    <strong>
+
+                        ${escapeHtml(
+                            deployment.ready_replicas
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div class="health-row">
+
+                    <span>
+                        Unavailable
+                    </span>
+
+                    <strong>
+
+                        ${escapeHtml(
+                            deployment.unavailable_replicas
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div class="health-row">
+
+                    <span>
+                        Status
+                    </span>
+
+                    <strong class="${
+                        healthy
+                            ? "health-ok"
+                            : "health-warning"
+                    }">
+
+                        ${
+                            healthy
+                                ? "Healthy"
+                                : "Attention"
+                        }
+
+                    </strong>
+
+                </div>
+
+            `;
+
+        }
+
+
+        /* =====================================================
+           POD HEALTH
+           ===================================================== */
+
+        function renderPodHealth(
+            pods
+        ) {
+
+            const container =
+                document.getElementById(
+                    "podHealth"
+                );
+
+
+            container.innerHTML =
+                "";
+
+
+            if (
+                !pods ||
+                pods.length === 0
+            ) {
+
+                container.textContent =
+                    "No pods found.";
+
+                return;
+
+            }
+
+
+            pods.forEach(
+                function(pod) {
+
+                    const healthy =
+                        pod.phase ===
+                        "Running" &&
+
+                        pod.ready_containers ===
+                        pod.total_containers;
+
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "health-row";
+
+
+                    row.innerHTML = `
+
+                        <span>
+
+                            ${escapeHtml(
+                                pod.name
+                            )}
+
+                        </span>
+
+
+                        <strong class="${
+                            healthy
+                                ? "health-ok"
+                                : "health-warning"
+                        }">
+
+                            ${escapeHtml(
+                                pod.phase
+                            )}
+
+                            /
+
+                            ${escapeHtml(
+                                pod.ready_containers
+                            )}
+
+                            /
+
+                            ${escapeHtml(
+                                pod.total_containers
+                            )}
+
+                        </strong>
+
+                    `;
+
+
+                    container.appendChild(
+                        row
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           LINE CHART
+           ===================================================== */
+
+        function createLineChart(
+            container,
+            data,
+            valueKey,
+            valueFormatter,
+            emptyMessage
+        ) {
+
+            if (!container) {
+
+                return;
+
+            }
+
+
+            container.innerHTML =
+                "";
+
+
+            if (
+                !Array.isArray(data) ||
+                data.length === 0
+            ) {
+
+                container.innerHTML = `
+
+                    <div class="chart-empty">
+
+                        ${escapeHtml(
+                            emptyMessage
+                        )}
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+            const width =
+                760;
+
+
+            const height =
+                300;
+
+
+            const margin = {
+
+                top:
+                    35,
+
+                right:
+                    25,
+
+                bottom:
+                    55,
+
+                left:
+                    70
+
+            };
+
+
+            const chartWidth =
+                width -
+                margin.left -
+                margin.right;
+
+
+            const chartHeight =
+                height -
+                margin.top -
+                margin.bottom;
+
+
+            const values =
+                data.map(
+                    function(item) {
+
+                        return Number(
+                            item[valueKey]
+                        ) || 0;
+
+                    }
+                );
+
+
+            const maxValue =
+                Math.max(
+                    ...values
+                );
+
+
+            let yMax;
+
+
+            if (
+                maxValue <= 1
+            ) {
+
+                yMax =
+                    1;
+
+            }
+
+
+            else if (
+                maxValue <= 5
+            ) {
+
+                yMax =
+                    5;
+
+            }
+
+
+            else if (
+                maxValue <= 10
+            ) {
+
+                yMax =
+                    10;
+
+            }
+
+
+            else {
+
+                yMax =
+                    Math.ceil(
+                        maxValue * 1.1
+                    );
+
+            }
+
+
+            const ySteps =
+                yMax <= 5
+                    ? yMax
+                    : 4;
+
+
+            function getX(
+                index
+            ) {
+
+                if (
+                    data.length ===
+                    1
+                ) {
+
+                    return (
+                        margin.left +
+                        chartWidth / 2
+                    );
+
+                }
+
+
+                return (
+                    margin.left +
+
+                    (
+                        index /
+                        (
+                            data.length -
+                            1
+                        )
+                    ) *
+                    chartWidth
+                );
+
+            }
+
+
+            function getY(
+                value
+            ) {
+
+                return (
+                    margin.top +
+                    chartHeight -
+
+                    (
+                        value /
+                        yMax
+                    ) *
+                    chartHeight
+                );
+
+            }
+
+
+            let svg = `
+
+                <svg
+
+                    viewBox="
+                        0
+                        0
+                        ${width}
+                        ${height}
+                    "
+
+                    width="100%"
+
+                    height="100%"
+
+                    preserveAspectRatio="none"
+
+                    role="img"
+
+                    aria-label="Line chart"
+
+                >
+
+            `;
+
+
+            for (
+                let i = 0;
+                i <= ySteps;
+                i++
+            ) {
+
+                const value =
+                    (
+                        yMax /
+                        ySteps
+                    ) * i;
+
+
+                const y =
+                    getY(
+                        value
+                    );
+
+
+                svg += `
+
+                    <line
+
+                        x1="${margin.left}"
+
+                        y1="${y}"
+
+                        x2="${
+                            width -
+                            margin.right
+                        }"
+
+                        y2="${y}"
+
+                        stroke="#e2e8f0"
+
+                        stroke-dasharray="4 4"
+
+                    />
+
+                `;
+
+
+                const label =
+                    valueKey ===
+                    "count"
+
+                        ? Math.round(
+                            value
+                        )
+
+                        : valueFormatter(
+                            value
+                        );
+
+
+                svg += `
+
+                    <text
+
+                        x="${margin.left - 12}"
+
+                        y="${y + 5}"
+
+                        text-anchor="end"
+
+                        font-size="12"
+
+                        fill="#64748b"
+
+                    >
+
+                        ${escapeHtml(
+                            label
+                        )}
+
+                    </text>
+
+                `;
+
+            }
+
+
+            svg += `
+
+                <line
+
+                    x1="${margin.left}"
+
+                    y1="${
+                        margin.top +
+                        chartHeight
+                    }"
+
+                    x2="${
+                        width -
+                        margin.right
+                    }"
+
+                    y2="${
+                        margin.top +
+                        chartHeight
+                    }"
+
+                    stroke="#cbd5e1"
+
+                />
+
+            `;
+
+
+            let path =
+                "";
+
+
+            data.forEach(
+                function(
+                    item,
+                    index
+                ) {
+
+                    const x =
+                        getX(
+                            index
+                        );
+
+
+                    const y =
+                        getY(
+                            Number(
+                                item[valueKey]
+                            ) || 0
+                        );
+
+
+                    path +=
+                        index === 0
+
+                            ? `M ${x} ${y}`
+
+                            : ` L ${x} ${y}`;
+
+                }
+            );
+
+
+            if (
+                data.length > 1
+            ) {
+
+                svg += `
+
+                    <path
+
+                        d="${path}"
+
+                        fill="none"
+
+                        stroke="#2563eb"
+
+                        stroke-width="3"
+
+                        stroke-linecap="round"
+
+                        stroke-linejoin="round"
+
+                    />
+
+                `;
+
+            }
+
+
+            data.forEach(
+                function(
+                    item,
+                    index
+                ) {
+
+                    const value =
+                        Number(
+                            item[valueKey]
+                        ) || 0;
+
+
+                    const x =
+                        getX(
+                            index
+                        );
+
+
+                    const y =
+                        getY(
+                            value
+                        );
+
+
+                    svg += `
+
+                        <circle
+
+                            cx="${x}"
+
+                            cy="${y}"
+
+                            r="5"
+
+                            fill="#2563eb"
+
+                            stroke="white"
+
+                            stroke-width="2"
+
+                        />
+
+                    `;
+
+
+                    svg += `
+
+                        <text
+
+                            x="${x}"
+
+                            y="${y - 12}"
+
+                            text-anchor="middle"
+
+                            font-size="12"
+
+                            font-weight="600"
+
+                            fill="#111827"
+
+                        >
+
+                            ${escapeHtml(
+                                valueFormatter(
+                                    value
+                                )
+                            )}
+
+                        </text>
+
+                    `;
+
+                }
+            );
+
+
+            data.forEach(
+                function(
+                    item,
+                    index
+                ) {
+
+                    const x =
+                        getX(
+                            index
+                        );
+
+
+                    svg += `
+
+                        <text
+
+                            x="${x}"
+
+                            y="${height - 18}"
+
+                            text-anchor="middle"
+
+                            font-size="12"
+
+                            fill="#64748b"
+
+                        >
+
+                            ${escapeHtml(
+                                item.date
+                            )}
+
+                        </text>
+
+                    `;
+
+                }
+            );
+
+
+            svg +=
+                "</svg>";
+
+
+            container.innerHTML =
+                svg;
+
+        }
+
+
+        /* =====================================================
+           ANALYTICS
+           ===================================================== */
+
+        async function loadAnalytics() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/analytics"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const analytics =
+                    data.analytics ||
+                    {};
+
+
+                createLineChart(
+
+                    document.getElementById(
+                        "incidentTrendsChart"
+                    ),
+
+                    analytics.incident_trends,
+
+                    "count",
+
+                    function(value) {
+
+                        return Math.round(
+                            value
+                        );
+
+                    },
+
+                    "No incident data available"
+
+                );
+
+
+                createLineChart(
+
+                    document.getElementById(
+                        "mttrTrendsChart"
+                    ),
+
+                    analytics.mttr_trends,
+
+                    "mttr_minutes",
+
+                    function(value) {
+
+                        return formatDurationMinutes(
+                            value
+                        );
+
+                    },
+
+                    "No resolved incident data available"
+
+                );
+
+
+                renderBarDistribution(
+
+                    "severity-distribution",
+
+                    analytics.severity_distribution,
+
+                    "No severity data available."
+
+                );
+
+
+                renderBarDistribution(
+
+                    "service-distribution",
+
+                    analytics.service_distribution,
+
+                    "No service data available."
+
+                );
+
+
+                setText(
+
+                    "resolution-rate",
+
+                    `${Number(
+                        analytics.resolution_rate ||
+                        0
+                    ).toFixed(2)}%`
+
+                );
+
+
+                renderRecurringIncidents(
+                    analytics.recurring_incidents
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load analytics:",
+                    error
+                );
+
+
+                document.getElementById(
+                    "incidentTrendsChart"
+                ).innerHTML = `
+
+                    <div class="chart-empty">
+
+                        Failed to load analytics.
+
+                    </div>
+
+                `;
+
+
+                document.getElementById(
+                    "mttrTrendsChart"
+                ).innerHTML = `
+
+                    <div class="chart-empty">
+
+                        Failed to load analytics.
+
+                    </div>
+
+                `;
+
+            }
+
+        }
+
+
+        /* =====================================================
+           BAR DISTRIBUTION
+           ===================================================== */
+
+        function renderBarDistribution(
+            elementId,
+            data,
+            emptyMessage
+        ) {
+
+            const container =
+                document.getElementById(
+                    elementId
+                );
+
+
+            if (!container) {
+
+                return;
+
+            }
+
+
+            container.innerHTML =
+                "";
+
+
+            const values =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+
+            if (
+                values.length === 0
+            ) {
+
+                container.textContent =
+                    emptyMessage;
+
+                return;
+
+            }
+
+
+            const maxValue =
+                Math.max(
+
+                    ...values.map(
+                        function(item) {
+
+                            return Number(
+                                item.count
+                            ) || 0;
+
+                        }
+                    )
+
+                ) || 1;
+
+
+            values.forEach(
+                function(item) {
+
+                    const count =
+                        Number(
+                            item.count
+                        ) || 0;
+
+
+                    const percentage =
+                        (
+                            count /
+                            maxValue
+                        ) * 100;
+
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "bar-container";
+
+
+                    row.innerHTML = `
+
+                        <div class="bar-label">
+
+                            <span>
+
+                                ${escapeHtml(
+                                    item.severity ||
+                                    item.service
+                                )}
+
+                            </span>
+
+
+                            <strong>
+
+                                ${escapeHtml(
+                                    count
+                                )}
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="
+                            bar-background
+                        ">
+
+                            <div
+
+                                class="bar"
+
+                                style="
+                                    width:
+                                    ${percentage}%;
+                                "
+
+                            >
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+
+                    container.appendChild(
+                        row
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           RECURRING INCIDENTS
+           ===================================================== */
+
+        function renderRecurringIncidents(
+            data
+        ) {
+
+            const container =
+                document.getElementById(
+                    "recurring-incidents"
+                );
+
+
+            if (!container) {
+
+                return;
+
+            }
+
+
+            container.innerHTML =
+                "";
+
+
+            const values =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+
+            if (
+                values.length === 0
+            ) {
+
+                container.textContent =
+                    "No recurring incidents.";
+
+                return;
+
+            }
+
+
+            values.forEach(
+                function(item) {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "analytics-row";
+
+
+                    row.innerHTML = `
+
+                        <span class="
+                            analytics-label
+                        ">
+
+                            ${escapeHtml(
+                                item.alert_name
+                            )}
+
+                            -
+
+                            ${escapeHtml(
+                                item.service
+                            )}
+
+                        </span>
+
+
+                        <span class="
+                            analytics-count
+                        ">
+
+                            ${escapeHtml(
+                                item.count
+                            )}
+
+                        </span>
+
+                    `;
+
+
+                    container.appendChild(
+                        row
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           REMEDIATION APPROVAL
+           ===================================================== */
+
+        async function loadRemediations() {
+
+            const container =
+                document.getElementById(
+                    "remediation-list"
+                );
+
+            const status =
+                document.getElementById(
+                    "remediation-status"
+                );
+
+            if (!container) {
+                return;
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/remediation"
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP error: ${response.status}`
+                    );
+                }
+
+                const data =
+                    await response.json();
+
+                const remediations =
+                    Array.isArray(
+                        data.remediations
+                    )
+                        ? data.remediations
+                        : [];
+
+                container.innerHTML = "";
+
+                if (remediations.length === 0) {
+
+                    container.innerHTML = `
+                        <div class="remediation-empty">
+                            No remediation actions pending.
+                        </div>
+                    `;
+
+                    status.textContent = "Clear";
+                    status.classList.remove("unavailable");
+
+                    return;
+                }
+
+                status.textContent =
+                    `${remediations.length} Action(s)`;
+
+                status.classList.remove("unavailable");
+
+                remediations.forEach(
+                    function(remediation) {
+
+                        renderRemediation(
+                            container,
+                            remediation
+                        );
+
+                    }
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Failed to load remediations:",
+                    error
+                );
+
+                container.innerHTML = `
+                    <div class="remediation-empty">
+                        Failed to load remediation actions.
+                    </div>
+                `;
+
+                status.textContent =
+                    "Unavailable";
+
+                status.classList.add(
+                    "unavailable"
+                );
+
+            }
+
+        }
+
+
+        function renderRemediation(
+            container,
+            remediation
+        ) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "remediation-card";
+
+            const risk =
+                remediation.risk ||
+                "Low";
+
+            const riskClass =
+                risk.toLowerCase() === "high"
+                    ? "risk-high"
+                    : risk.toLowerCase() === "medium"
+                        ? "risk-medium"
+                        : "risk-low";
+
+            const status =
+                remediation.status ||
+                "pending";
+
+            card.innerHTML = `
+
+                <div class="remediation-header">
+
+                    <div class="remediation-action">
+
+                        ${escapeHtml(
+                            remediation.action
+                        )}
+
+                    </div>
+
+                    <span class="
+                        remediation-badge
+                        ${riskClass}
+                    ">
+
+                        Risk:
+                        ${escapeHtml(risk)}
+
+                    </span>
+
+                </div>
+
+                <div class="remediation-reason">
+
+                    ${escapeHtml(
+                        remediation.reason
+                    )}
+
+                </div>
+
+                <div class="remediation-meta">
+
+                    <span class="remediation-badge">
+
+                        Status:
+                        ${escapeHtml(status)}
+
+                    </span>
+
+                    <span class="remediation-badge">
+
+                        Approval:
+                        ${
+                            remediation.requires_approval
+                                ? "Required"
+                                : "Not Required"
+                        }
+
+                    </span>
+
+                </div>
+
+                <div
+                    class="remediation-actions"
+                    id="remediation-actions-${escapeHtml(
+                        remediation.id
+                    )}">
+                </div>
+
+            `;
+
+            container.appendChild(
+                card
+            );
+
+            const actions =
+                card.querySelector(
+                    ".remediation-actions"
+                );
+
+            if (
+                status === "pending" &&
+                remediation.requires_approval
+            ) {
+
+                const approveButton =
+                    document.createElement(
+                        "button"
+                    );
+
+                approveButton.textContent =
+                    "Approve";
+
+                approveButton.className =
+                    "button-success";
+
+                approveButton.onclick =
+                    function() {
+
+                        approveRemediation(
+                            remediation.id
+                        );
+
+                    };
+
+                actions.appendChild(
+                    approveButton
+                );
+
+                const rejectButton =
+                    document.createElement(
+                        "button"
+                    );
+
+                rejectButton.textContent =
+                    "Reject";
+
+                rejectButton.className =
+                    "button-danger";
+
+                rejectButton.onclick =
+                    function() {
+
+                        rejectRemediation(
+                            remediation.id
+                        );
+
+                    };
+
+                actions.appendChild(
+                    rejectButton
+                );
+
+            }
+
+            if (status === "approved") {
+
+                const executeButton =
+                    document.createElement(
+                        "button"
+                    );
+
+                executeButton.textContent =
+                    "Execute";
+
+                executeButton.className =
+                    "button-success";
+
+                executeButton.onclick =
+                    function() {
+
+                        executeRemediation(
+                            remediation.id
+                        );
+
+                    };
+
+                actions.appendChild(
+                    executeButton
+                );
+
+            }
+
+            if (status === "executed") {
+
+                const completed =
+                    document.createElement(
+                        "span"
+                    );
+
+                completed.className =
+                    "remediation-badge";
+
+                completed.textContent =
+                    "Execution completed";
+
+                actions.appendChild(
+                    completed
+                );
+
+            }
+
+            if (status === "rejected") {
+
+                const rejected =
+                    document.createElement(
+                        "span"
+                    );
+
+                rejected.className =
+                    "remediation-badge";
+
+                rejected.textContent =
+                    "Remediation rejected";
+
+                actions.appendChild(
+                    rejected
+                );
+
+            }
+
+        }
+
+
+        async function approveRemediation(
+            remediationId
+        ) {
+
+            await updateRemediationStatus(
+                remediationId,
+                "approve"
+            );
+
+        }
+
+
+        async function rejectRemediation(
+            remediationId
+        ) {
+
+            await updateRemediationStatus(
+                remediationId,
+                "reject"
+            );
+
+        }
+
+
+        async function updateRemediationStatus(
+            remediationId,
+            action
+        ) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/api/remediation/${remediationId}/${action}`,
+                        {
+                            method:
+                                "POST"
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (
+                    data.status !==
+                    "success"
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Remediation update failed."
+                    );
+
+                }
+
+                await loadRemediations();
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Remediation update failed:",
+                    error
+                );
+
+                alert(
+                    `Remediation update failed: ${error.message}`
+                );
+
+            }
+
+        }
+
+
+        async function executeRemediation(
+            remediationId
+        ) {
+
+            const confirmed =
+                window.confirm(
+                    "Execute this approved remediation against order-service?"
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/api/remediation/${remediationId}/execute`,
+                        {
+                            method:
+                                "POST"
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (
+                    data.status !==
+                    "success"
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Remediation execution failed."
+                    );
+
+                }
+
+                if (
+                    data.result?.status !==
+                    "executed"
+                ) {
+
+                    throw new Error(
+                        data.result?.message ||
+                        "Remediation was blocked."
+                    );
+
+                }
+
+                alert(
+                    data.result.message ||
+                    "Remediation executed successfully."
+                );
+
+                await loadRemediations();
+
+                await loadObservabilityOverview();
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Remediation execution failed:",
+                    error
+                );
+
+                alert(
+                    `Remediation execution failed: ${error.message}`
+                );
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           INITIAL LOAD
+           ===================================================== */
+
+        loadLatestIncident();
+
+        loadIncidentHistory();
+
+        loadIncidentStats();
+
+        loadAnalytics();
+
+        loadObservabilityOverview();
+
+        loadLatestPrometheusMetrics();
+
+        loadRemediations();
+
+
+        /* =====================================================
+           AUTOMATIC REFRESH
+           ===================================================== */
+
+        setInterval(
+
+            loadLatestIncident,
+
+            5000
+
+        );
+
+
+        setInterval(
+
+            loadIncidentHistory,
+
+            5000
+
+        );
+
+
+        setInterval(
+
+            loadIncidentStats,
+
+            5000
+
+        );
+
+
+        setInterval(
+
+            loadAnalytics,
+
+            5000
+
+        );
+
+
+        setInterval(
+
+            loadObservabilityOverview,
+
+            5000
+
+        );
+
+
+        setInterval(
+
+            loadLatestPrometheusMetrics,
+
+            5000
+
+        );
+
+        setInterval(
+
+            loadRemediations,
+
+            5000
+
+        );
+
+    </script>
+
+
+</body>
+
+</html>

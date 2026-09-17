@@ -1,0 +1,48 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+
+metadata:
+  name: ai-sre-webhook
+  namespace: monitoring
+
+  labels:
+    alertmanagerConfig: monitoring
+
+spec:
+
+  route:
+
+    receiver: ai-sre-webhook
+
+    groupBy:
+      - alertname
+      - service
+      - severity
+
+    groupWait: 10s
+
+    groupInterval: 1m
+
+    repeatInterval: 1h
+
+    continue: true
+
+    matchers:
+
+      - name: service
+        value: order-service
+        matchType: "="
+
+  receivers:
+
+    - name: ai-sre-webhook
+
+      webhookConfigs:
+
+        - url: "http://host.docker.internal:8001/webhook/alertmanager"
+
+          sendResolved: true
+
+          maxAlerts: 10
+
+          timeout: 30s

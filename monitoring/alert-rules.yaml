@@ -1,0 +1,159 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: order-service-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+
+spec:
+  groups:
+    - name: order-service
+
+      rules:
+        # --------------------------------------------------
+        # High P95 Latency
+        # --------------------------------------------------
+        - alert: HighOrderServiceP95Latency
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum(
+                rate(
+                  http_request_duration_seconds_bucket{
+                    endpoint!="/metrics"
+                  }[5m]
+                )
+              ) by (le)
+            ) > 0.5
+          for: 2m
+          labels:
+            severity: warning
+            service: order-service
+          annotations:
+            summary: "High order-service P95 latency"
+            description: >
+              P95 HTTP latency for order-service
+              has exceeded 500ms for more than 2 minutes.
+            runbook: "runbooks/high-latency.md"
+
+        # --------------------------------------------------
+        # High CPU
+        # --------------------------------------------------
+        - alert: HighOrderServiceCPU
+          expr: |
+            sum(
+              rate(
+                container_cpu_usage_seconds_total{
+                  namespace="ai-sre",
+                  pod=~"order-service-.*",
+                  container!="POD",
+                  container!=""
+                }[5m]
+              )
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            service: order-service
+          annotations:
+            summary: "High order-service CPU usage"
+            description: >
+              order-service CPU usage has exceeded
+              0.5 CPU cores for more than 5 minutes.
+            runbook: "runbooks/high-cpu.md"
+
+        # --------------------------------------------------
+        # High Memory
+        # --------------------------------------------------
+        - alert: HighOrderServiceMemory
+          expr: |
+            sum(
+              container_memory_working_set_bytes{
+                namespace="ai-sre",
+                pod=~"order-service-.*",
+                container!="POD",
+                container!=""
+              }
+            ) > 500 * 1024 * 1024
+          for: 5m
+          labels:
+            severity: warning
+            service: order-service
+          annotations:
+            summary: "High order-service memory usage"
+            description: >
+              order-service memory usage has exceeded
+              500MiB for more than 5 minutes.
+            runbook: "runbooks/high-memory.md"
+
+        # --------------------------------------------------
+        # Pod Restarts
+        # --------------------------------------------------
+        - alert: OrderServicePodRestarts
+          expr: |
+            sum(
+              increase(
+                kube_pod_container_status_restarts_total{
+                  namespace="ai-sre",
+                  pod=~"order-service-.*"
+                }[10m]
+              )
+            ) > 0
+          for: 1m
+          labels:
+            severity: warning
+            service: order-service
+          annotations:
+            summary: "order-service pod restarted"
+            description: >
+              One or more order-service containers
+              have restarted within the last 10 minutes.
+            runbook: "runbooks/pod-restarts.md"
+
+        # --------------------------------------------------
+        # Pod Availability
+        # --------------------------------------------------
+        - alert: OrderServicePodUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace="ai-sre",
+              deployment="order-service"
+            }
+            <
+            kube_deployment_spec_replicas{
+              namespace="ai-sre",
+              deployment="order-service"
+            }
+          for: 2m
+          labels:
+            severity: critical
+            service: order-service
+          annotations:
+            summary: "order-service pod availability degraded"
+            description: >
+              Available order-service replicas are below
+              the desired replica count for more than 2 minutes.
+            runbook: "runbooks/pod-availability.md"
+
+        # --------------------------------------------------
+        # High HTTP 5xx Error Rate
+        # --------------------------------------------------
+        - alert: HighHTTP5xxErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total[5m]))
+            ) * 100 > 5
+          for: 2m
+          labels:
+            severity: critical
+            service: order-service
+          annotations:
+            summary: "High HTTP 5xx error rate"
+            description: >
+              HTTP 5xx error rate for order-service
+              has exceeded 5% for more than 2 minutes.
+            runbook: "runbooks/high-http-error-rate.md"
